@@ -5,7 +5,7 @@ Game::Game()
 	mWindow = nullptr;
 	mRenderer = nullptr;
 
-	tex = new Texture;
+	frontTex = new Texture;
 
 	mState = GameState::PLAYING;
 }
@@ -30,7 +30,7 @@ void Game::Init()
 		exit(-1);
 	}
 
-	int imgFlags = IMG_INIT_PNG;
+	int imgFlags = IMG_INIT_PNG || IMG_INIT_JPG;
 	if (!(IMG_Init(imgFlags) & imgFlags))
 	{
 		std::cout << IMG_GetError() << std::endl;
@@ -77,23 +77,50 @@ int Rand(int i) { return std::rand() % i; }
 void Game::InitCards()
 {
 	for (int i = 0; i < cons::CARDS; i++)
-		mCards[i] = new Card;
+		mRenderOrder.push_back(i);
+
+	ShuffleVector(mRenderOrder);
+
+	for (int i = 0; i < cons::CARDS; i++)
+		mCards.push_back(new Card);
+
+	for (int i = 0; i < cons::CARDS; i++)
+		mCards[i]->renderBack = false;
+
+	for (int i = 0; i < cons::CARDS; i++)
+		mCards[i]->render = true;
 
 	std::vector<int> ops;
 	for (int i = 0; i < cons::CARDS / 2; i++)
 		ops.push_back(i);
 
-	std::srand(unsigned(std::time(0)));
-	std::random_shuffle(ops.begin(), ops.end(), Rand);
+	ShuffleVector(ops);
 
 	for (int i = 0; i < cons::CARDS / 2; i++)
 		mCards[i]->id = ops[i];
 
-	std::srand(unsigned(std::time(0)));
-	std::random_shuffle(ops.begin(), ops.end(), Rand);
+	ShuffleVector(ops);
 
 	for (int i = 0; i < cons::CARDS / 2; i++)
 		mCards[i + (cons::CARDS / 2)]->id = ops[i];
+
+	for (int i = 0; i < cons::CARDS; i++)
+	{
+		std::string path = "MemoryGameV2/res/back/back";
+		path.append(std::to_string(mCards[i]->id) + ".png");
+		mCards[i]->resPath = path;
+	}
+	
+	for (int i = 0; i < cons::CARDS; i++)
+	{
+		std::cout << mCards[i]->resPath << std::endl;
+	}
+}
+
+void Game::ShuffleVector(std::vector<int> &vec)
+{
+	std::srand(unsigned(std::time(0)));
+	std::random_shuffle(vec.begin(), vec.end(), Rand);
 }
 
 void Game::GameLoop()
@@ -115,6 +142,19 @@ void Game::Input()
 	{
 		if (e.type == SDL_QUIT)
 			mState = GameState::QUIT;
+
+		if (e.type == SDL_KEYDOWN)
+		{
+			switch (e.key.keysym.sym)
+			{
+			case SDLK_e:
+				for (int i = 0; i < cons::CARDS; i++)
+				{
+					mCards[i]->render = (!mCards[i]->render);
+				}
+				break;
+			}
+		}
 	}
 }
 
@@ -129,7 +169,28 @@ void Game::Render()
 
 void Game::RenderCards()
 {
-	tex->Render(0, 0, mRenderer);
+	for (int i = 0; i < cons::CARDS; i++)
+	{
+		if (mCards[mRenderOrder[i]]->render == true)
+		{
+			if ((i * 132) > cons::WIDTH)
+			{
+				if (mCards[mRenderOrder[i]]->renderBack == false)
+					frontTex->Render(((i - cons::CARDS / 2) * 132), (cons::HEIGHT - 
+					(/*Card Height*/ 200 + /*Height Above bottom*/ 60)), mRenderer);
+				else
+					mCards[mRenderOrder[i]]->backTex.Render(((i - cons::CARDS / 2) * 132), (cons::HEIGHT -
+					(/*Card Height*/ 200 + /*Height Above bottom*/ 60)), mRenderer);
+			}
+			else
+			{
+				if (mCards[mRenderOrder[i]]->renderBack == false)
+					frontTex->Render(i * 132, (cons::HEIGHT / 12), mRenderer);
+				else
+					mCards[mRenderOrder[i]]->backTex.Render(i * 132, (cons::HEIGHT / 12), mRenderer);
+			}
+		}
+	}
 }
 
 void Game::LimitFrames()
@@ -142,10 +203,9 @@ void Game::LimitFrames()
 
 void Game::LoadMedia()
 {
-	tex->LoadTextureFromFile("MemoryGameV2/res/img.png", mRenderer);
+	frontTex->LoadTextureFromFile("MemoryGameV2/res/front.png", mRenderer);
 
 	for (int i = 0; i < cons::CARDS; i++)
-	{
-		mCards[i]->texture.LoadTextureFromFile("MemoryGameV2/res/back.png", mRenderer);
-	}
+		mCards[i]->backTex.LoadTextureFromFile(mCards[i]->resPath, mRenderer);
+	
 }

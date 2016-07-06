@@ -18,8 +18,14 @@ enum class GameState { PLAYING, QUIT };
 
 struct Card
 {
-	Texture texture;
-	int id = 0;
+	Texture backTex;
+	
+	std::string resPath;
+	
+	bool renderBack;
+	bool render;
+	
+	int id;
 };
 
 class Game
@@ -43,6 +49,8 @@ private:
 
 	void LoadMedia();
 
+	void ShuffleVector(std::vector<int> &vec);
+
 	void CreateWindow(std::string title, int w, int h);
 	void CreateRenderer();
 
@@ -51,9 +59,10 @@ private:
 
 	SDL_Event e;
 
-	Card * mCards[cons::CARDS];
+	std::vector<Card *> mCards;
+	std::vector<int> mRenderOrder;
 
-	Texture * tex;
+	Texture * frontTex;
 
 	Uint32 mStartTick;
 
