@@ -6,6 +6,7 @@ Texture::Texture()
 {
 	mWidth = 0;
 	mHeight = 0;
+	mx = 0, my = 0;
 
 	mTexture = nullptr;
 }
@@ -44,6 +45,9 @@ void Texture::LoadTextureFromFile(std::string path, SDL_Renderer * renderer)
 void Texture::Render(int x, int y, SDL_Renderer * renderer)
 {
 	SDL_Rect rect = { x, y, mWidth, mHeight };
+
+	mx = x;
+	my = y;
 
 	SDL_RenderCopy(renderer, mTexture, NULL, &rect);
 }

@@ -7,6 +7,9 @@ Game::Game()
 
 	frontTex = new Texture;
 
+	currentFlips = 0;
+	mPairs = 0;
+
 	mState = GameState::PLAYING;
 }
 
@@ -115,9 +118,21 @@ void Game::InitCards()
 	{
 		std::cout << mCards[i]->resPath << std::endl;
 	}
+
+	for (int i = 0; i < cons::CARDS; i++)
+	{
+		std::cout << "Card #" << i << " Id: " << mCards[i]->id << std::endl;
+	}
+
+	std::cout << "Render order " << std::endl;
+	for (int i = 0; i < cons::CARDS; i++)
+	{
+		std::cout << mRenderOrder[i] << std::endl;
+	}
 }
 
-void Game::ShuffleVector(std::vector<int> &vec)
+template <class Type>
+void Game::ShuffleVector(std::vector<Type> &vec)
 {
 	std::srand(unsigned(std::time(0)));
 	std::random_shuffle(vec.begin(), vec.end(), Rand);
@@ -130,6 +145,7 @@ void Game::GameLoop()
 		mStartTick = SDL_GetTicks();
 
 		Render();
+		
 		Input();
 
 		LimitFrames();
@@ -150,12 +166,85 @@ void Game::Input()
 			case SDLK_e:
 				for (int i = 0; i < cons::CARDS; i++)
 				{
-					mCards[i]->render = (!mCards[i]->render);
+					mCards[i]->renderBack = (!mCards[i]->renderBack);
 				}
 				break;
 			}
 		}
+
+		int x, y;
+		SDL_GetMouseState(&x, &y);
+
+		if (e.type == SDL_MOUSEBUTTONDOWN)
+		{
+			for (int i = 0; i < mCards.size(); i++)
+			{
+				bool inCard = true;
+				if (x < mCards[i]->backTex.GetX())
+					inCard = false;
+				if (x > mCards[i]->backTex.GetX() + /*Card Width*/ 100)
+					inCard = false;
+				if (y > mCards[i]->backTex.GetY() + /*Card Height*/ 200)
+					inCard = false;
+				if (y < mCards[i]->backTex.GetY())
+					inCard = false;
+
+				if (inCard)
+				{
+					if (mCards[i]->render == true)
+					{
+						if (mCards[i]->renderBack == true)
+						{
+							mCards[i]->renderBack = (!mCards[i]->renderBack);
+							currentFlips--;
+						}
+						else if(currentFlips <= cons::MAX_CARD_FLIPS)
+						{
+							mCards[i]->renderBack = (!mCards[i]->renderBack);
+							idChoices.push_back(mCards[i]->id);
+
+							if (currentFlips == cons::MAX_CARD_FLIPS)
+							{
+								if (idChoices[0] == idChoices[1])
+									Match();
+								
+								idChoices.clear();
+							}
+							currentFlips++;
+						}
+					}
+					//std::cout << "Current flips " << currentFlips << std::endl;
+				}
+			}			
+		}
 	}
+}
+
+void Game::Match()
+{
+	mPairs++;
+	std::cout << "Current Pairs: " << mPairs << '\n';
+
+	for (int i = 0; i < mCards.size(); i++)
+	{
+		if (mCards[i]->renderBack == true)
+		{
+			mCards[i]->render = false;
+		}
+	}
+	
+	bool done = true;
+	
+	for (int i = 0; i < mCards.size(); i++)
+	{
+		if (mCards[i]->render == true)
+			done = false;
+	}
+
+	if (done)
+		mState = GameState::QUIT;
+
+	currentFlips = -1;
 }
 
 void Game::Render()
@@ -176,18 +265,32 @@ void Game::RenderCards()
 			if ((i * 132) > cons::WIDTH)
 			{
 				if (mCards[mRenderOrder[i]]->renderBack == false)
+				{
 					frontTex->Render(((i - cons::CARDS / 2) * 132), (cons::HEIGHT - 
 					(/*Card Height*/ 200 + /*Height Above bottom*/ 60)), mRenderer);
+
+					mCards[mRenderOrder[i]]->backTex.SetX(((i - cons::CARDS / 2) * 132));
+					mCards[mRenderOrder[i]]->backTex.SetY((cons::HEIGHT - (200 + 60)));
+				}
 				else
+				{
 					mCards[mRenderOrder[i]]->backTex.Render(((i - cons::CARDS / 2) * 132), (cons::HEIGHT -
 					(/*Card Height*/ 200 + /*Height Above bottom*/ 60)), mRenderer);
+				}
 			}
 			else
 			{
 				if (mCards[mRenderOrder[i]]->renderBack == false)
+				{
 					frontTex->Render(i * 132, (cons::HEIGHT / 12), mRenderer);
+
+					mCards[mRenderOrder[i]]->backTex.SetX(i * 132);
+					mCards[mRenderOrder[i]]->backTex.SetY((cons::HEIGHT / 12));
+				}
 				else
+				{
 					mCards[mRenderOrder[i]]->backTex.Render(i * 132, (cons::HEIGHT / 12), mRenderer);
+				}
 			}
 		}
 	}

@@ -41,6 +41,8 @@ private:
 
 	void GameLoop();
 	void Input();
+	
+	void Match();
 
 	void Render();
 	void RenderCards();
@@ -49,7 +51,8 @@ private:
 
 	void LoadMedia();
 
-	void ShuffleVector(std::vector<int> &vec);
+	template <class Type>
+	void ShuffleVector(std::vector<Type> &vec);
 
 	void CreateWindow(std::string title, int w, int h);
 	void CreateRenderer();
@@ -63,6 +66,11 @@ private:
 	std::vector<int> mRenderOrder;
 
 	Texture * frontTex;
+
+	int currentFlips;
+	int mPairs;
+
+	std::vector<int> idChoices;
 
 	Uint32 mStartTick;
 
