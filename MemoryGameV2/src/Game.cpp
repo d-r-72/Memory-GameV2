@@ -13,9 +13,12 @@ Game::Game()
 
 Game::~Game()
 {
-	delete[] mCards;
+	for (int i = 0; i < cons::CARDS; i++)
+		delete mCards[i];
+
 	SDL_DestroyRenderer(mRenderer);
 	SDL_DestroyWindow(mWindow);
+
 }
 
 void Game::Init()
@@ -139,10 +142,10 @@ void Game::LimitFrames()
 
 void Game::LoadMedia()
 {
-	tex->LoadTextureFromFile("res/img.png", mRenderer);
+	tex->LoadTextureFromFile("MemoryGameV2/res/img.png", mRenderer);
 
 	for (int i = 0; i < cons::CARDS; i++)
 	{
-		mCards[i]->texture.LoadTextureFromFile("res/back.png", mRenderer);
+		mCards[i]->texture.LoadTextureFromFile("MemoryGameV2/res/back.png", mRenderer);
 	}
 }
